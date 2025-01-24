@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced DNS Resolver</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --background-color: #ecf0f1;
+            --text-color: #333;
+        }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 10px;
+        }
+        #dns-form {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        #domain {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result-section { 
+            margin-top: 20px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px;
+            padding: 15px; 
+            background-color: #f9f9f9;
+        }
+        .result-section h2 {
+            color: var(--primary-color);
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #protocol-explanation {
+            background-color: #e8f4f8;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 5px 5px 0;
+        }
+        .diagram-steps {
+            background-color: #f0f4f8;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+        }
+        .diagram-steps ol {
+            padding-left: 20px;
+        }
+        .diagram-steps li {
+            margin-bottom: 10px;
+        }
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Advanced DNS Resolver</h1>
+
+        <div id="protocol-explanation">
+            <h3>What is DNS?</h3>
+            <p>DNS (Domain Name System) is like the internet's phonebook. It translates human-readable domain names (like google.com) into IP addresses that computers use to identify each other. When you type a website name, DNS servers help your computer find the correct server to connect to.</p>
+        </div>
+
+        <form id="dns-form">
+            <input type="text" name="domain" id="domain" style="width:30px;" placeholder="Enter domain name (e.g., google.com)" required>
+            <button type="submit" style="margin: 3px;">Resolve</button>
+        </form>
+
+        <div id="dns-result" class="result-section" style="display:none;">
+            <h2>DNS Resolution</h2>
+            <p><strong>Explanation:</strong> DNS records provide different types of information about a domain:</p>
+            <ul>
+                <li><strong>IPv4 (A Records):</strong> IPv4 addresses for the domain</li>
+                <li><strong>IPv6 (AAAA Records):</strong> IPv6 addresses</li>
+                <li><strong>MX Records:</strong> Mail exchange servers for email routing</li>
+                <li><strong>TXT Records:</strong> Text information (often used for verification)</li>
+                <li><strong>NS Records:</strong> Name servers responsible for the domain</li>
+            </ul>
+            <pre id="dns-details"></pre>
+        </div>
+
+        <div id="whois-result" class="result-section" style="display:none;">
+            <h2>WHOIS Information</h2>
+            <p><strong>Explanation:</strong> WHOIS data provides registration details about a domain:</p>
+            <ul>
+                <li><strong>Registrar:</strong> Company that registered the domain</li>
+                <li><strong>Creation Date:</strong> When the domain was first registered</li>
+                <li><strong>Expiration Date:</strong> When the domain registration expires</li>
+                <li><strong>Name Servers:</strong> DNS servers managing the domain</li>
+            </ul>
+            <pre id="whois-details"></pre>
+        </div>
+
+        <div id="network-result" class="result-section" style="display:none;">
+            <h2>Network Information</h2>
+            <p><strong>Explanation:</strong> Network details about the IP address:</p>
+            <ul>
+                <li><strong>IP Version:</strong> IPv4 or IPv6</li>
+                <li><strong>Private/Global:</strong> Type of IP address</li>
+                <li><strong>Network Range:</strong> Subnet information</li>
+            </ul>
+            <pre id="network-details"></pre>
+        </div>
+
+        <div id="ssl-result" class="result-section" style="display:none;">
+            <h2>SSL Certificate</h2>
+            <p><strong>Explanation:</strong> SSL certificate details:</p>
+            <ul>
+                <li><strong>Issuer:</strong> Certificate authority</li>
+                <li><strong>Subject:</strong> Domain details</li>
+                <li><strong>Expiration:</strong> Certificate validity period</li>
+            </ul>
+            <pre id="ssl-details"></pre>
+        </div>
+
+        <div id="dns-flow-explanation" class="result-section">
+            <h2>DNS Resolution Flow</h2>
+            <p>The DNS resolution process involves multiple servers working together to translate a domain name to an IP address:</p>
+            
+            <div class="diagram-steps">
+                <ol>
+                    <li><strong>User Request:</strong> You type a domain name in the browser</li>
+                    <li><strong>Local Resolver:</strong> Local DNS resolver starts the lookup process</li>
+                    <li><strong>Root Servers:</strong> Directs to the appropriate Top-Level Domain (TLD) server</li>
+                    <li><strong>TLD Servers:</strong> Points to the domain's authoritative name servers</li>
+                    <li><strong>Authoritative Servers:</strong> Provides the final IP address</li>
+                    <li><strong>Result:</strong> Browser receives the IP and connects to the website</li>
+                </ol>
+            </div>
+
+            <div class="mermaid">
+                sequenceDiagram
+                    participant User as User's Computer
+                    participant Resolver as DNS Resolver
+                    participant RootServer as Root DNS Server
+                    participant TLDServer as TLD DNS Server
+                    participant AuthServer as Authoritative DNS Server
+
+                    User->>Resolver: Request IP for example.com
+                    Resolver->>RootServer: Query for example.com
+                    RootServer-->>Resolver: Refer to .com TLD Server
+                    
+                    Resolver->>TLDServer: Query for example.com
+                    TLDServer-->>Resolver: Refer to Authoritative Name Servers
+                    
+                    Resolver->>AuthServer: Exact IP request for example.com
+                    AuthServer-->>Resolver: Return IP Address
+                    
+                    Resolver-->>User: Provide IP Address
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('dns-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const domain = document.getElementById('domain').value;
+            const resultSections = [
+                'dns-result', 'whois-result', 
+                'network-result', 'ssl-result'
+            ];
+
+            // Reset visibility
+            resultSections.forEach(section => {
+                document.getElementById(section).style.display = 'none';
+            });
+
+            const formData = new FormData();
+            formData.append('domain', domain);
+
+            axios.post('/resolve', formData)
+                .then(response => {
+                    // DNS Details
+                    if (response.data.dns) {
+                        document.getElementById('dns-details').textContent = 
+                            JSON.stringify(response.data.dns, null, 2);
+                        document.getElementById('dns-result').style.display = 'block';
+                    }
+
+                    // WHOIS Details
+                    if (response.data.whois) {
+                        document.getElementById('whois-details').textContent = 
+                            JSON.stringify(response.data.whois, null, 2);
+                        document.getElementById('whois-result').style.display = 'block';
+                    }
+
+                    // Network Details
+                    if (response.data.network) {
+                        document.getElementById('network-details').textContent = 
+                            JSON.stringify(response.data.network, null, 2);
+                        document.getElementById('network-result').style.display = 'block';
+                    }
+
+                    // SSL Details
+                    if (response.data.ssl) {
+                        document.getElementById('ssl-details').textContent = 
+                            JSON.stringify(response.data.ssl, null, 2);
+                        document.getElementById('ssl-result').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + (error.response ? error.response.data.error : 'Unknown error'));
+                });
+        });
+
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default'
+        });
+    </script>
+</body>
+</html>

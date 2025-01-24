@@ -1,0 +1,13 @@
+# Create requirements.txt
+pip freeze > requirements.txt
+
+# Add vercel.json configuration
+{
+  "version": 2,
+  "builds": [
+    {"src": "app.py", "use": "@vercel/python"}
+  ],
+  "routes": [
+    {"src": "/(.*)", "dest": "app.py"}
+  ]
+}
